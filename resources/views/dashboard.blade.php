@@ -15,7 +15,16 @@
     <div class="container mt-4">
 
         <h2 class="mb-4">Welcome {{Auth::user()->name}}     <a href="{{route('logout')}}">Logout</a></h2>
+        @if (Session::has('success'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <h4 class="alert-heading">Success!</h4>
+            <p>{{ Session::get('success') }}</p>
 
+            <button type="button" class="close" data-dismiss="alert aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    @endif
         <a href="{{route('createProduct')}}" class="btn btn-primary">Create</a>
         <table class="table table-striped table-bordered">
             <thead>
@@ -46,7 +55,7 @@
                     </td>
                     <td>
                         <a href="{{route('editProduct',['id'=>$view->id])}}">Edit</a>
-                   <a href="{{route('deleteProduct')}}">Delete</a>
+                   <a href="{{route('deleteProduct',['id'=>$view->id])}}">Delete</a>
                     </td>
                 </tr>
                 @endforeach

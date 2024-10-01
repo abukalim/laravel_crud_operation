@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
@@ -60,52 +61,83 @@ class ProductController extends Controller
         DB::beginTransaction();
 
         try {
+            $productImage = DB::table('product')->select('product_image')->where('id', $id)->first();
+            $randomName = null;  // Initialize $randomName as null
+
+            // If a new image is uploaded, handle the image processing
+            if ($request->hasFile('product_image')) {
+                if (!empty($productImage->product_image)) {
+
+                    // Delete the old image if it exists
+                    $imagePath = public_path('storage/images/' . $productImage->product_image);
+                if (file_exists($imagePath)) {
+
+                    unlink($imagePath);  // Delete the old image
+                }
+                }
+
+                // Process the new image
+                $file = $request->file('product_image');
+                $randomName = Str::random(10) . time() . '.' . $file->getClientOriginalExtension();
+                $file->storeAs('images', $randomName, 'public');
+            }
+
             // Capture form data
             $name = $request->product_name;
             $description = $request->product_desc;
             $price = $request->product_price;
 
-            // If there's an image, process it (you can uncomment the code below if needed)
-            // if ($request->hasFile('product_image')) {
-            //     $file = $request->file('product_image');
-            //     $randomName = Str::random(10).time() . '.' . $file->getClientOriginalExtension();
-            //     $path = $file->storeAs('images', $randomName, 'public');
-            // }
+            // Prepare the update data
+            $updateData = [
+                'product_name' => $name,
+                'product_description' => $description,
+                'product_price' => $price,
+                'updated_at' => now(),
+            ];
+
+            // Only update the image if a new one was uploaded
+            if ($randomName) {
+                $updateData['product_image'] = $randomName;
+            }
 
             // Update product information in the database
             $productUpdate = DB::table('product')
                 ->where('id', $id)
-                ->update([
-                    'product_name' => $name,
-                    'product_description' => $description,
-                    'product_price' => $price,
-                    'updated_at' => now() // Use updated_at instead of created_at
-                ]);
+                ->update($updateData);
 
             // Check if the update was successful
             if ($productUpdate) {
-                // Commit the transaction
                 DB::commit();
                 return redirect()->route('editProduct', ['id' => $id])
                                  ->with('success', 'Product Updated Successfully');
             } else {
-                // Rollback the transaction if the update fails
                 DB::rollBack();
                 return redirect()->route('editProduct', ['id' => $id])
                                  ->with('error', 'Failed to update product.');
             }
-
         } catch (\Exception $e) {
-            // Rollback the transaction in case of any exception
             DB::rollBack();
-
-            // Log the error for debugging (optional)
             \Log::error('Product Update Error: ' . $e->getMessage());
-
-            // Redirect with an error message
             return redirect()->route('editProduct', ['id' => $id])
                              ->with('error', 'An error occurred while updating the product.');
         }
     }
+
+    public function deleteProduct(Request $request ,$id){
+
+        $productImage = DB::table('product')->select('product_image')->where('id', $id)->first();
+        $imagePath = public_path('storage/images/' . $productImage->product_image);
+        if (file_exists($imagePath)) {
+
+            unlink($imagePath);
+        }
+
+        $deleteProduct=DB::table('product')->where('id',$id)->delete();
+
+        return redirect()->route('dashboard')->with('success', 'Product Deleted Successfully');
+
+
+    }
+
 
 }

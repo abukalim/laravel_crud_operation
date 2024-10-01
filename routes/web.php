@@ -24,6 +24,6 @@ Route::group(['middleware' => 'isLoggedIn'], function () {
      Route::post('/submitProduct', [ProductController::class, 'submitProductone'])->name('submitProduct');
      Route::get('/editProduct/{id?}', [ProductController::class, 'editProduct'])->name('editProduct');
      Route::post('/updateProduct/{id?}', [ProductController::class, 'updateProduct'])->name('updateProduct');
-
+     Route::get('/deleteProduct/{id?}', [ProductController::class, 'deleteProduct'])->name('deleteProduct');
 
 });
